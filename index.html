@@ -15,6 +15,7 @@
       position: fixed; left: 10px; top: 10px; z-index: 9999;
       background: rgba(0,0,0,0.55); color:#fff; padding:10px 12px;
       border-radius: 10px; font-size: 14px; line-height: 1.25;
+      max-width: 92vw;
     }
     .hud b { color: #ffd400; }
   </style>
@@ -23,6 +24,7 @@
 <body>
   <div class="hud">
     Repère: <b>Hiro</b> au coin bas-gauche (0,0)<br/>
+    Hiro size: <b>134 mm</b> (size=0.134)<br/>
     Échelle: <b>1 unité AR = 1000 mm</b><br/>
     Donc tôle: <b>4 x 2</b> unités AR
   </div>
@@ -33,23 +35,28 @@
     arjs="sourceType: webcam; debugUIEnabled: false;"
   >
     <!-- Marker = ORIGINE (0,0) -->
-    <a-marker preset="hiro" id="originMarker">
+    <!-- IMPORTANT: size=0.134 m car le carré noir fait 134 mm -->
+    <a-marker preset="hiro" size="0.134" id="originMarker">
 
-      <!-- Dessin du cadre tôle 4 x 2 (optionnel mais utile) -->
-      <!-- Rectangle: on simule avec 4 segments -->
-      <a-entity id="frame">
-        <!-- bas -->
-        <a-box position="2 0 0" depth="0.01" height="0.01" width="4" color="#00FFFF"></a-box>
-        <!-- haut -->
-        <a-box position="2 0 2" depth="0.01" height="0.01" width="4" color="#00FFFF"></a-box>
-        <!-- gauche -->
-        <a-box position="0 0 1" depth="0.01" height="0.01" width="2" rotation="0 90 0" color="#00FFFF"></a-box>
-        <!-- droite -->
-        <a-box position="4 0 1" depth="0.01" height="0.01" width="2" rotation="0 90 0" color="#00FFFF"></a-box>
+      <!-- Décalage centre->coin bas-gauche : 0.134/2 = 0.067 m -->
+      <a-entity position="0.067 0 0.067">
+
+        <!-- Cadre tôle 4 x 2 (mètres en AR) -->
+        <a-entity id="frame">
+          <!-- bas (z=0) -->
+          <a-box position="2 0 0" depth="0.01" height="0.01" width="4" color="#00FFFF"></a-box>
+          <!-- haut (z=2) -->
+          <a-box position="2 0 2" depth="0.01" height="0.01" width="4" color="#00FFFF"></a-box>
+          <!-- gauche (x=0) -->
+          <a-box position="0 0 1" depth="0.01" height="0.01" width="2" rotation="0 90 0" color="#00FFFF"></a-box>
+          <!-- droite (x=4) -->
+          <a-box position="4 0 1" depth="0.01" height="0.01" width="2" rotation="0 90 0" color="#00FFFF"></a-box>
+        </a-entity>
+
+        <!-- Lettres A..G -->
+        <a-entity id="labels"></a-entity>
+
       </a-entity>
-
-      <!-- Ici on injecte les lettres A..G -->
-      <a-entity id="labels"></a-entity>
     </a-marker>
 
     <a-entity camera></a-entity>
@@ -59,11 +66,10 @@
     // ===========================
     // CONFIG
     // ===========================
-    // 1 unité AR = 1000 mm
+    // 1 unité AR = 1000 mm (donc 1 unité = 1 m)
     const MM_PER_UNIT = 1000;
 
     // Coordonnées en mm, origine bas-gauche de la tôle 4000x2000
-    // Mets ici tes centres (x,y) + la lettre A..G
     const pieces = [
       { ref: "A", x: 500,  y: 300 },
       { ref: "B", x: 1200, y: 800 },
@@ -74,7 +80,6 @@
       // { ref: "G", x: 3900, y: 1900 },
     ];
 
-    // Conversion mm -> unités AR
     function mmToUnit(mm) { return mm / MM_PER_UNIT; }
 
     // ===========================
@@ -86,13 +91,13 @@
       const xU = mmToUnit(p.x);
       const yU = mmToUnit(p.y);
 
-      // Dans notre repère, X = droite, Z = haut (Y reste la hauteur)
+      // Dans A-Frame: X = droite, Z = "vers le haut de la tôle", Y = hauteur
       const el = document.createElement("a-entity");
       el.setAttribute("position", `${xU} 0.02 ${yU}`);
 
-      // Petit disque sous la lettre
+      // Point sous la lettre
       const dot = document.createElement("a-circle");
-      dot.setAttribute("radius", "0.05");
+      dot.setAttribute("radius", "0.06");
       dot.setAttribute("rotation", "-90 0 0");
       dot.setAttribute("color", "#FFD400");
       el.appendChild(dot);
@@ -103,7 +108,7 @@
       text.setAttribute("align", "center");
       text.setAttribute("color", "#FFD400");
       text.setAttribute("width", "2");
-      text.setAttribute("position", "0 0.15 0");
+      text.setAttribute("position", "0 0.18 0");
       text.setAttribute("side", "double");
       el.appendChild(text);
 
@@ -112,4 +117,3 @@
   </script>
 </body>
 </html>
-
