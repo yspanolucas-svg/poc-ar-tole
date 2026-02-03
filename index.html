@@ -129,6 +129,22 @@
 
       labels.appendChild(el);
     });
+
+    let locked = false;
+const marker = document.getElementById("originMarker");
+
+marker.addEventListener("markerFound", () => {
+  if (!locked) {
+    locked = true;
+    console.log("Marker locked");
+  }
+});
+
+marker.addEventListener("markerLost", () => {
+  if (locked) {
+    marker.object3D.visible = true; // on force l’affichage
+  }
+});
   </script>
 </body>
 </html>
