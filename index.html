@@ -24,9 +24,9 @@
 <body>
   <div class="hud">
     Repère: <b>Hiro</b> au coin bas-gauche (0,0)<br/>
-    Hiro size: <b>134 mm</b> (size=0.134)<br/>
-    Échelle: <b>1 unité AR = 1000 mm</b><br/>
-    Donc tôle: <b>4 x 2</b> unités AR
+    Hiro: <b>134 mm</b> (size=0.134)<br/>
+    Échelle: <b>calibrée</b> (4000mm attendu / 545mm mesuré)<br/>
+    Tôle: <b>4 x 2</b> unités AR (1 unité ≈ 1 m)
   </div>
 
   <a-scene
@@ -34,23 +34,22 @@
     vr-mode-ui="enabled: false"
     arjs="sourceType: webcam; debugUIEnabled: false;"
   >
-    <!-- Marker = ORIGINE (0,0) -->
-    <!-- IMPORTANT: size=0.134 m car le carré noir fait 134 mm -->
+    <!-- Marker = ORIGINE -->
     <a-marker preset="hiro" size="0.134" id="originMarker">
 
-      <!-- Décalage centre->coin bas-gauche : 0.134/2 = 0.067 m -->
+      <!-- Décalage centre->coin bas-gauche du carré noir : 0.134/2 = 0.067 m -->
       <a-entity position="0.067 0 0.067">
 
-        <!-- Cadre tôle 4 x 2 (mètres en AR) -->
+        <!-- Cadre tôle 4 x 2 (avec Z inversé => "vers le haut" = Z négatif) -->
         <a-entity id="frame">
           <!-- bas (z=0) -->
           <a-box position="2 0 0" depth="0.01" height="0.01" width="4" color="#00FFFF"></a-box>
-          <!-- haut (z=2) -->
-          <a-box position="2 0 2" depth="0.01" height="0.01" width="4" color="#00FFFF"></a-box>
-          <!-- gauche (x=0) -->
-          <a-box position="0 0 1" depth="0.01" height="0.01" width="2" rotation="0 90 0" color="#00FFFF"></a-box>
-          <!-- droite (x=4) -->
-          <a-box position="4 0 1" depth="0.01" height="0.01" width="2" rotation="0 90 0" color="#00FFFF"></a-box>
+          <!-- haut (z=-2) -->
+          <a-box position="2 0 -2" depth="0.01" height="0.01" width="4" color="#00FFFF"></a-box>
+          <!-- gauche (x=0, z=-1) -->
+          <a-box position="0 0 -1" depth="0.01" height="0.01" width="2" rotation="0 90 0" color="#00FFFF"></a-box>
+          <!-- droite (x=4, z=-1) -->
+          <a-box position="4 0 -1" depth="0.01" height="0.01" width="2" rotation="0 90 0" color="#00FFFF"></a-box>
         </a-entity>
 
         <!-- Lettres A..G -->
@@ -64,12 +63,19 @@
 
   <script>
     // ===========================
-    // CONFIG
+    // CALIBRATION ECHELLE
     // ===========================
-    // 1 unité AR = 1000 mm (donc 1 unité = 1 m)
-    const MM_PER_UNIT = 1000;
+    // Tu as mesuré ~545 mm là où tu attends 4000 mm
+    const SCALE_FIX = 4000 / 545;        // ≈ 7.339...
+    // 1 unité AR "théorique" = 1000 mm, mais on corrige avec SCALE_FIX
+    const MM_PER_UNIT = 1000 / SCALE_FIX; // ≈ 136.25 mm / unité AR
 
-    // Coordonnées en mm, origine bas-gauche de la tôle 4000x2000
+    function mmToUnit(mm) { return mm / MM_PER_UNIT; }
+
+    // ===========================
+    // TES DONNEES (en mm)
+    // origine bas-gauche de la tôle 4000x2000
+    // ===========================
     const pieces = [
       { ref: "A", x: 500,  y: 300 },
       { ref: "B", x: 1200, y: 800 },
@@ -80,10 +86,8 @@
       // { ref: "G", x: 3900, y: 1900 },
     ];
 
-    function mmToUnit(mm) { return mm / MM_PER_UNIT; }
-
     // ===========================
-    // CREATE LABELS
+    // CREATE LABELS (PLUS VISIBLE)
     // ===========================
     const labels = document.getElementById("labels");
 
@@ -91,24 +95,35 @@
       const xU = mmToUnit(p.x);
       const yU = mmToUnit(p.y);
 
-      // Dans A-Frame: X = droite, Z = "vers le haut de la tôle", Y = hauteur
+      // IMPORTANT : Z inversé pour que "y mm" parte vers le haut (z négatif)
       const el = document.createElement("a-entity");
-      el.setAttribute("position", `${xU} 0.02 ${yU}`);
+      el.setAttribute("position", `${xU} 0.02 ${-yU}`);
 
-      // Point sous la lettre
+      // Point très visible
       const dot = document.createElement("a-circle");
-      dot.setAttribute("radius", "0.06");
+      dot.setAttribute("radius", "0.12");      // plus gros
       dot.setAttribute("rotation", "-90 0 0");
-      dot.setAttribute("color", "#FFD400");
+      dot.setAttribute("color", "#FF2D2D");    // rouge
       el.appendChild(dot);
 
-      // Lettre
+      // Halo noir (outline)
+      const halo = document.createElement("a-text");
+      halo.setAttribute("value", p.ref);
+      halo.setAttribute("align", "center");
+      halo.setAttribute("color", "#000000");
+      halo.setAttribute("width", "4");
+      halo.setAttribute("position", "0 0.25 0.001");
+      halo.setAttribute("side", "double");
+      halo.setAttribute("scale", "1.15 1.15 1.15");
+      el.appendChild(halo);
+
+      // Lettre (avant-plan)
       const text = document.createElement("a-text");
       text.setAttribute("value", p.ref);
       text.setAttribute("align", "center");
       text.setAttribute("color", "#FFD400");
-      text.setAttribute("width", "2");
-      text.setAttribute("position", "0 0.18 0");
+      text.setAttribute("width", "4");
+      text.setAttribute("position", "0 0.25 0");
       text.setAttribute("side", "double");
       el.appendChild(text);
 
