@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>POC AR Table 1000x500 (1 Hiro)</title>
+  <title>POC AR Table 1000x500 (1 Hiro) x3</title>
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
@@ -24,25 +24,25 @@
   <div class="hud">
     Test net: <b>table 1000×500 mm</b><br/>
     Hiro noir: <b>134 mm</b> (size=0.134) • offset <b>0.067 m</b><br/>
-    Échelle: <b>1 unité AR = 1 m</b> (MM_PER_UNIT=1000)
+    Affichage: <b>×3</b> (table = 3.0 × 1.5 unités AR)
   </div>
 
   <a-scene embedded vr-mode-ui="enabled:false"
            arjs="sourceType: webcam; debugUIEnabled:false;">
     <a-marker preset="hiro" size="0.134" id="originMarker">
-      <!-- (0,0) = coin bas-gauche de la zone -->
+      <!-- (0,0) = coin bas-gauche via offset centre->coin du carré noir -->
       <a-entity position="0.067 0 0.067">
 
-        <!-- Cadre table: 1.0 x 0.5 m (plus épais) -->
+        <!-- Cadre table (affichage ×3) : 3.0 x 1.5 -->
         <a-entity id="frame">
           <!-- bas -->
-          <a-box position="0.5 0 0"     depth="0.03" height="0.01" width="1.0" color="#00FFFF"></a-box>
+          <a-box position="1.5 0 0"      depth="0.04" height="0.01" width="3.0" color="#00FFFF"></a-box>
           <!-- haut -->
-          <a-box position="0.5 0 -0.5"  depth="0.03" height="0.01" width="1.0" color="#00FFFF"></a-box>
+          <a-box position="1.5 0 -1.5"   depth="0.04" height="0.01" width="3.0" color="#00FFFF"></a-box>
           <!-- gauche -->
-          <a-box position="0 0 -0.25"   depth="0.03" height="0.01" width="0.5" rotation="0 90 0" color="#00FFFF"></a-box>
+          <a-box position="0 0 -0.75"    depth="0.04" height="0.01" width="1.5" rotation="0 90 0" color="#00FFFF"></a-box>
           <!-- droite -->
-          <a-box position="1.0 0 -0.25" depth="0.03" height="0.01" width="0.5" rotation="0 90 0" color="#00FFFF"></a-box>
+          <a-box position="3.0 0 -0.75"  depth="0.04" height="0.01" width="1.5" rotation="0 90 0" color="#00FFFF"></a-box>
         </a-entity>
 
         <a-entity id="labels"></a-entity>
@@ -53,8 +53,12 @@
   </a-scene>
 
   <script>
-    // 1 unité AR = 1 m
-    const MM_PER_UNIT = 1000;
+    // ====== Affichage x3 (plus étalé) ======
+    const DISPLAY_SCALE = 3;
+
+    // 1 unité AR = 1 m "réel", mais on veut afficher 1000mm comme 3 unités,
+    // donc on divise l'unité mm par 3 :
+    const MM_PER_UNIT = 1000 / DISPLAY_SCALE;  // 333.33 mm par unité affichée
     const mmToUnit = (mm) => mm / MM_PER_UNIT;
 
     // Points test (mm) dans une table 1000x500
@@ -69,53 +73,47 @@
 
     const labels = document.getElementById("labels");
 
-    // Réglages visibilité
-    const DOT_R = 0.09;        // point + gros
-    const TEXT_Y = 0.22;       // hauteur des lettres (au-dessus de la table)
-    const TEXT_SCALE = 3.2;    // taille globale texte
-    const BG_W = 0.22;         // fond noir derrière lettre
-    const BG_H = 0.14;
+    // Visibilité
+    const DOT_R = 0.14;     // gros points
+    const TEXT_Y = 0.35;    // hauteur du texte
+    const TEXT_W = 6;       // largeur de rendu du texte (plus grand = plus lisible)
+    const OUTLINE_SCALE = 1.25;
 
     pieces.forEach(p => {
       const xU = mmToUnit(p.x);
       const yU = mmToUnit(p.y);
 
       const el = document.createElement("a-entity");
-      // Z inversé (vers le haut table = Z négatif)
+      // Z inversé: vers le haut table = Z négatif
       el.setAttribute("position", `${xU} 0.02 ${-yU}`);
 
-      // Point très visible
+      // Point rouge (au sol)
       const dot = document.createElement("a-circle");
       dot.setAttribute("radius", String(DOT_R));
       dot.setAttribute("rotation", "-90 0 0");
       dot.setAttribute("color", "#FF2D2D");
       el.appendChild(dot);
 
-      // Groupe "étiquette"
-      const tag = document.createElement("a-entity");
-      tag.setAttribute("position", `0 ${TEXT_Y} 0`);
-      tag.setAttribute("scale", `${TEXT_SCALE} ${TEXT_SCALE} ${TEXT_SCALE}`);
+      // Texte (sans fond plane), avec outline = 2 textes superposés
+      const halo = document.createElement("a-text");
+      halo.setAttribute("value", p.ref);
+      halo.setAttribute("align", "center");
+      halo.setAttribute("color", "#000000");
+      halo.setAttribute("width", String(TEXT_W));
+      halo.setAttribute("position", `0 ${TEXT_Y} 0.001`);
+      halo.setAttribute("side", "double");
+      halo.setAttribute("scale", `${OUTLINE_SCALE} ${OUTLINE_SCALE} ${OUTLINE_SCALE}`);
+      el.appendChild(halo);
 
-      // Fond noir (pour lisibilité)
-      const bg = document.createElement("a-plane");
-      bg.setAttribute("width", String(BG_W));
-      bg.setAttribute("height", String(BG_H));
-      bg.setAttribute("color", "#000000");
-      bg.setAttribute("opacity", "0.65");
-      bg.setAttribute("position", "0 0 0");
-      tag.appendChild(bg);
-
-      // Lettre jaune
       const text = document.createElement("a-text");
       text.setAttribute("value", p.ref);
       text.setAttribute("align", "center");
       text.setAttribute("color", "#FFD400");
-      text.setAttribute("width", "0.6");
-      text.setAttribute("position", "0 -0.03 0.001");
+      text.setAttribute("width", String(TEXT_W));
+      text.setAttribute("position", `0 ${TEXT_Y} 0`);
       text.setAttribute("side", "double");
-      tag.appendChild(text);
+      el.appendChild(text);
 
-      el.appendChild(tag);
       labels.appendChild(el);
     });
   </script>
