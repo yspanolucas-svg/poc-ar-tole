@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>POC AR Tôle 4000x2000 (2 Hiro)</title>
+  <title>POC AR Table 1000x500 (1 Hiro)</title>
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
@@ -22,41 +22,33 @@
 
 <body>
   <div class="hud">
-    Mode: <b>2 Hiro (redondance diagonale)</b><br/>
-    Hiro noir: <b>134 mm</b> (size=0.134) • offset: <b>0.067 m</b><br/>
-    Relais TR: décalage <b>3866 mm</b> / <b>1866 mm</b><br/>
-    Échelle: <b>calibrée</b> (4000/545)
+    Test net: <b>table 1000×500 mm</b><br/>
+    Hiro noir: <b>134 mm</b> (size=0.134) • offset <b>0.067 m</b><br/>
+    Échelle: <b>1 unité AR = 1 m</b> (MM_PER_UNIT=1000)
   </div>
 
-  <a-scene
-    embedded
-    vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-  >
-    <!-- =========================
-         HIRO #1 : Bas-Gauche (avec QR sur la feuille)
-         (0,0) = coin bas-gauche tôle
-         ========================= -->
-    <a-marker preset="hiro" size="0.134" id="markerBL">
-      <!-- centre -> coin bas-gauche du carré noir -->
-      <a-entity position="0.067 0 0.067" id="worldBL">
-        <a-entity id="frameBL"></a-entity>
-        <a-entity id="labelsBL"></a-entity>
-      </a-entity>
-    </a-marker>
+  <a-scene embedded vr-mode-ui="enabled:false"
+           arjs="sourceType: webcam; debugUIEnabled:false;">
+    <!-- 1 seul Hiro -->
+    <a-marker preset="hiro" size="0.134" id="originMarker">
 
-    <!-- =========================
-         HIRO #2 : Haut-Droite (sans QR)
-         On affiche le MEME monde, mais décalé de (-3866mm, -1866mm)
-         pour retomber sur la même origine que BL
-         ========================= -->
-    <a-marker preset="hiro" size="0.134" id="markerTR">
-      <a-entity position="0.067 0 0.067" id="worldTR">
-        <!-- le décalage est injecté en JS -->
-        <a-entity id="shiftTR">
-          <a-entity id="frameTR"></a-entity>
-          <a-entity id="labelsTR"></a-entity>
+      <!-- (0,0) = coin bas-gauche de la zone (offset centre->coin du carré noir) -->
+      <a-entity position="0.067 0 0.067">
+
+        <!-- Cadre table: 1.0 x 0.5 m
+             On garde Z inversé: "vers le haut de la table" = Z négatif -->
+        <a-entity id="frame">
+          <!-- bas -->
+          <a-box position="0.5 0 0"     depth="0.01" height="0.01" width="1.0" color="#00FFFF"></a-box>
+          <!-- haut -->
+          <a-box position="0.5 0 -0.5"  depth="0.01" height="0.01" width="1.0" color="#00FFFF"></a-box>
+          <!-- gauche -->
+          <a-box position="0 0 -0.25"   depth="0.01" height="0.01" width="0.5" rotation="0 90 0" color="#00FFFF"></a-box>
+          <!-- droite -->
+          <a-box position="1.0 0 -0.25" depth="0.01" height="0.01" width="0.5" rotation="0 90 0" color="#00FFFF"></a-box>
         </a-entity>
+
+        <a-entity id="labels"></a-entity>
       </a-entity>
     </a-marker>
 
@@ -64,109 +56,60 @@
   </a-scene>
 
   <script>
-    // ===========================
-    // 1) CALIBRATION ECHELLE (ton cas)
-    // ===========================
-    const SCALE_FIX = 4000 / 545;           // ≈ 7.339...
-    const MM_PER_UNIT = 1000 / SCALE_FIX;   // ≈ 136.25 mm / unité AR
+    // 1 unité AR = 1 m
+    const MM_PER_UNIT = 1000;
     const mmToUnit = (mm) => mm / MM_PER_UNIT;
 
-    // ===========================
-    // 2) DECALAGE ENTRE LES 2 HIRO (diag BL -> TR)
-    // Avec noir=134mm, si BL du noir = (0,0),
-    // alors BL du noir TR = (4000-134, 2000-134) = (3866,1866)
-    // ===========================
-    const DX_MM = 4000 - 134; // 3866
-    const DY_MM = 2000 - 134; // 1866
-    const dxU = mmToUnit(DX_MM);
-    const dyU = mmToUnit(DY_MM);
-
-    // On travaille en plan X/Z, et on a choisi Z = -Y(mm) pour que "vers le haut tôle" monte.
-    // Donc pour annuler (dx, dy) on met:
-    // x += -dxU ; z += +dyU  (car z = -y)
-    document.getElementById("shiftTR").setAttribute("position", `${-dxU} 0 ${+dyU}`);
-
-    // ===========================
-    // 3) TES DONNEES (centres en mm)
-    // ===========================
+    // Mets ici quelques points test (en mm) dans une table 1000x500
     const pieces = [
-      { ref: "A", x: 500,  y: 300 },
-      { ref: "B", x: 1200, y: 800 },
-      { ref: "C", x: 2500, y: 400 },
-      { ref: "D", x: 3100, y: 1500 },
-      { ref: "E", x: 1800, y: 1200 },
-      { ref: "F", x: 3500, y: 600 },
-      // { ref: "G", x: 3900, y: 1900 },
+      { ref: "A", x: 100, y: 100 },
+      { ref: "B", x: 500, y: 250 },
+      { ref: "C", x: 900, y: 400 },
+      { ref: "D", x: 250, y: 450 },
+      { ref: "E", x: 750, y: 120 },
+      { ref: "F", x: 980, y: 20  },
     ];
 
-    // ===========================
-    // 4) BUILD: cadre + labels (réutilisable)
-    // ===========================
-    function buildFrame(frameEl) {
-      // cadre 4 x 2 (en "unités AR"), avec Z inversé (haut = Z négatif)
-      const mkBox = (pos, rot, w, color="#00FFFF") => {
-        const b = document.createElement("a-box");
-        b.setAttribute("position", pos);
-        if (rot) b.setAttribute("rotation", rot);
-        b.setAttribute("depth", "0.01");
-        b.setAttribute("height", "0.01");
-        b.setAttribute("width", w);
-        b.setAttribute("color", color);
-        return b;
-      };
-      frameEl.appendChild(mkBox("2 0 0",    null,     "4"));      // bas
-      frameEl.appendChild(mkBox("2 0 -2",   null,     "4"));      // haut
-      frameEl.appendChild(mkBox("0 0 -1",   "0 90 0", "2"));      // gauche
-      frameEl.appendChild(mkBox("4 0 -1",   "0 90 0", "2"));      // droite
-    }
+    const labels = document.getElementById("labels");
 
-    function buildLabels(labelsEl) {
-      pieces.forEach(p => {
-        const xU = mmToUnit(p.x);
-        const yU = mmToUnit(p.y);
+    pieces.forEach(p => {
+      const xU = mmToUnit(p.x);
+      const yU = mmToUnit(p.y);
 
-        const el = document.createElement("a-entity");
-        // Z inversé: z = -y
-        el.setAttribute("position", `${xU} 0.02 ${-yU}`);
+      const el = document.createElement("a-entity");
+      // Z inversé
+      el.setAttribute("position", `${xU} 0.02 ${-yU}`);
 
-        // Gros point rouge
-        const dot = document.createElement("a-circle");
-        dot.setAttribute("radius", "0.12");
-        dot.setAttribute("rotation", "-90 0 0");
-        dot.setAttribute("color", "#FF2D2D");
-        el.appendChild(dot);
+      // Point très visible
+      const dot = document.createElement("a-circle");
+      dot.setAttribute("radius", "0.06");
+      dot.setAttribute("rotation", "-90 0 0");
+      dot.setAttribute("color", "#FF2D2D");
+      el.appendChild(dot);
 
-        // Halo noir
-        const halo = document.createElement("a-text");
-        halo.setAttribute("value", p.ref);
-        halo.setAttribute("align", "center");
-        halo.setAttribute("color", "#000000");
-        halo.setAttribute("width", "4");
-        halo.setAttribute("position", "0 0.30 0.001");
-        halo.setAttribute("side", "double");
-        halo.setAttribute("scale", "1.18 1.18 1.18");
-        el.appendChild(halo);
+      // Halo noir
+      const halo = document.createElement("a-text");
+      halo.setAttribute("value", p.ref);
+      halo.setAttribute("align", "center");
+      halo.setAttribute("color", "#000000");
+      halo.setAttribute("width", "2");
+      halo.setAttribute("position", "0 0.12 0.001");
+      halo.setAttribute("side", "double");
+      halo.setAttribute("scale", "1.25 1.25 1.25");
+      el.appendChild(halo);
 
-        // Lettre jaune
-        const text = document.createElement("a-text");
-        text.setAttribute("value", p.ref);
-        text.setAttribute("align", "center");
-        text.setAttribute("color", "#FFD400");
-        text.setAttribute("width", "4");
-        text.setAttribute("position", "0 0.30 0");
-        text.setAttribute("side", "double");
-        el.appendChild(text);
+      // Lettre jaune
+      const text = document.createElement("a-text");
+      text.setAttribute("value", p.ref);
+      text.setAttribute("align", "center");
+      text.setAttribute("color", "#FFD400");
+      text.setAttribute("width", "2");
+      text.setAttribute("position", "0 0.12 0");
+      text.setAttribute("side", "double");
+      el.appendChild(text);
 
-        labelsEl.appendChild(el);
-      });
-    }
-
-    // Construire le monde 2 fois (BL et TR), mais TR est décalé via shiftTR
-    buildFrame(document.getElementById("frameBL"));
-    buildLabels(document.getElementById("labelsBL"));
-
-    buildFrame(document.getElementById("frameTR"));
-    buildLabels(document.getElementById("labelsTR"));
+      labels.appendChild(el);
+    });
   </script>
 </body>
 </html>
